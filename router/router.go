@@ -105,6 +105,11 @@ func findAnswerFromSheets(question string) string {
 	// 小文字化して比較（大文字小文字を無視するため）
 	q := strings.ToLower(question)
 
+	fmt.Println("==== Sheet data ====")
+	for _, row := range resp.Values {
+		fmt.Println(row)
+	}
+
 	for _, row := range resp.Values {
 		if len(row) >= 2 {
 			keyword := strings.ToLower(fmt.Sprintf("%v", row[0]))
