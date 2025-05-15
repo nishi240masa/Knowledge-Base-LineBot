@@ -108,6 +108,9 @@ func findAnswerFromSheets(question string) string {
 	log.Printf("=== DEBUG: Sheet Rows ===")
 	for i, row := range resp.Values {
 		log.Printf("Row %d: len=%d - %v", i, len(row), row)
+		if len(row) >= 2 {
+			log.Printf("Row %d: %s - %s", i, row[0], row[1])
+		}
 	}
 
 	// 小文字化して比較（大文字小文字を無視するため）
@@ -115,8 +118,8 @@ func findAnswerFromSheets(question string) string {
 
 	for _, row := range resp.Values {
 		if len(row) >= 2 {
-			question := strings.ToLower(fmt.Sprintf("%v", row[1]))
-			answer := fmt.Sprintf("%v", row[2])
+			question := strings.ToLower(fmt.Sprintf("%v", row[0]))
+			answer := fmt.Sprintf("%v", row[1])
 			if strings.Contains(q, question) {
 				return answer
 			}
