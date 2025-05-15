@@ -1,0 +1,6 @@
+/.env
+docker
+tmp
+data
+
+DS_Store
