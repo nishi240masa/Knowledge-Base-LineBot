@@ -19,61 +19,54 @@ import (
 var (
 	bot          *linebot.Client
 	sheetService *sheets.Service
-	sheetID      = os.Getenv("GOOGLE_SHEET_ID") // Google Sheets ID
+	sheetID      = os.Getenv("GOOGLE_SHEET_ID")
 )
 
 func Init() {
-	// 環境変数 PORT を取得
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "80" // デフォルトポート
+		port = "80"
 	}
 
-	// ルーターの初期化
+	// Ginルーター初期化
 	r := gin.Default()
 
-	var err error
+	// CORS設定
+	r.Use(cors.New(cors.Config{
+		AllowOrigins: []string{"*"},
+		AllowMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders: []string{"Origin", "Content-Type", "Authorization"},
+		MaxAge:       12 * time.Hour,
+	}))
 
-	// LINE Bot 初期化
+	// LINE Bot初期化
+	var err error
 	bot, err = linebot.New(
-		// LINEのチャンネルシークレット
 		os.Getenv("LINE_CHANNEL_SECRET"),
 		os.Getenv("LINE_CHANNEL_ACCESS_TOKEN"),
 	)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("LINE Bot init error: %v", err)
 	}
 
-	// Google Sheets API 初期化
+	// Sheets API 初期化
 	ctx := context.Background()
-	// Google Sheets APIの認証情報をJSON形式で取得
 	sheetService, err = sheets.NewService(ctx, option.WithCredentialsJSON([]byte(os.Getenv("GOOGLE_CREDENTIALS_JSON"))))
 	if err != nil {
-		log.Fatalf("Unable to create Sheets service: %v", err)
+		log.Fatalf("Sheets API init error: %v", err)
 	}
 
-	// CORSの設定
-	r.Use(cors.New(cors.Config{
-		AllowOrigins: []string{"*"},                                                                                                           // 許可するオリジン
-		AllowMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},                                                                     // 許可するHTTPメソッド
-		AllowHeaders: []string{"Access-Control-Allow-Credentials", "Access-Control-Allow-Headers", "Origin", "Content-Type", "Authorization"}, // 許可するヘッダー
-		MaxAge:       12 * time.Hour,                                                                                                          // キャッシュの最大時間
-	}))
-
-	// connectionTest
+	// 接続確認用エンドポイント
 	r.GET("/", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "connection success!!!!",
-		})
+		c.JSON(http.StatusOK, gin.H{"message": "connection success"})
 	})
 
-	// Webhookエンドポイント
-
+	// LINEのWebhook
 	r.POST("/callback", handleCallback)
 
-	// 指定されたポートでサーバーを開始
+	// サーバ起動
 	if err := r.Run(fmt.Sprintf(":%s", port)); err != nil {
-		fmt.Printf("Failed to start server: %s\n", err)
+		log.Fatalf("Server failed to start: %v", err)
 	}
 }
 
@@ -81,21 +74,19 @@ func handleCallback(c *gin.Context) {
 	events, err := bot.ParseRequest(c.Request)
 	if err != nil {
 		if err == linebot.ErrInvalidSignature {
-			c.Status(http.StatusBadRequest)
+			c.AbortWithStatus(http.StatusBadRequest)
 		} else {
-			c.Status(http.StatusInternalServerError)
+			c.AbortWithStatus(http.StatusInternalServerError)
 		}
 		return
 	}
 
-	// Google SheetsからFAQを取得
 	for _, event := range events {
 		if event.Type == linebot.EventTypeMessage {
 			if msg, ok := event.Message.(*linebot.TextMessage); ok {
-				answer := findAnswer(msg.Text)
-				// ユーザーに返信
+				answer := findAnswerFromSheets(msg.Text)
 				if _, err := bot.ReplyMessage(event.ReplyToken, linebot.NewTextMessage(answer)).Do(); err != nil {
-					log.Print(err)
+					log.Printf("Reply error: %v", err)
 				}
 			}
 		}
@@ -103,18 +94,23 @@ func handleCallback(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-func findAnswer(question string) string {
-	// Google SheetsからFAQを取得
+// Google SheetsからFAQを取得して質問に合う答えを返す
+func findAnswerFromSheets(question string) string {
 	resp, err := sheetService.Spreadsheets.Values.Get(sheetID, "FAQ!A:B").Do()
 	if err != nil {
-		log.Printf("Error reading sheet: %v", err)
-		return "エラーが発生しました。"
+		log.Printf("Failed to read spreadsheet: %v", err)
+		return "エラーが発生しました（FAQ読み込み失敗）。"
 	}
+
+	// 小文字化して比較（大文字小文字を無視するため）
+	q := strings.ToLower(question)
 
 	for _, row := range resp.Values {
 		if len(row) >= 2 {
-			if strings.Contains(question, row[0].(string)) {
-				return row[1].(string)
+			keyword := strings.ToLower(fmt.Sprintf("%v", row[0]))
+			answer := fmt.Sprintf("%v", row[1])
+			if strings.Contains(q, keyword) {
+				return answer
 			}
 		}
 	}
