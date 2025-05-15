@@ -96,7 +96,15 @@ func handleCallback(c *gin.Context) {
 
 // Google SheetsからFAQを取得して質問に合う答えを返す
 func findAnswerFromSheets(question string) string {
-	resp, err := sheetService.Spreadsheets.Values.Get(sheetID, "FAQ!A:B").Do()
+	//　質問の取得
+	resp, err := sheetService.Spreadsheets.Values.Get(sheetID, "FAQ!A").Do()
+	if err != nil {
+		log.Printf("Failed to read spreadsheet: %v", err)
+		return "エラーが発生しました（FAQ読み込み失敗）。"
+	}
+
+	//　回答の取得
+	resp2, err := sheetService.Spreadsheets.Values.Get(sheetID, "FAQ!B").Do()
 	if err != nil {
 		log.Printf("Failed to read spreadsheet: %v", err)
 		return "エラーが発生しました（FAQ読み込み失敗）。"
@@ -105,19 +113,17 @@ func findAnswerFromSheets(question string) string {
 	// 小文字化して比較（大文字小文字を無視するため）
 	q := strings.ToLower(question)
 
-	fmt.Println("==== Sheet data ====")
-	for _, row := range resp.Values {
-		fmt.Println(row)
-	}
-
-	for _, row := range resp.Values {
-		if len(row) >= 2 {
-			keyword := strings.ToLower(fmt.Sprintf("%v", row[0]))
-			answer := fmt.Sprintf("%v", row[1])
-			if strings.Contains(q, keyword) {
+	for i, row := range resp.Values {
+		if len(row) > 0 {
+			//　質問の取得
+			questionFromSheet := strings.ToLower(row[0].(string))
+			if strings.Contains(questionFromSheet, q) {
+				//　回答の取得
+				answer := resp2.Values[i][0].(string)
 				return answer
 			}
 		}
 	}
+
 	return "その質問にはまだ対応していません。"
 }
