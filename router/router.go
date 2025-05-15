@@ -116,9 +116,13 @@ func findAnswerFromSheets(question string) string {
 	// 小文字化して比較（大文字小文字を無視するため）
 	q := strings.ToLower(question)
 
+	log.Printf("=== DEBUG: Question ===")
+	log.Printf("Question: %s", q)
+
 	for _, row := range resp.Values {
 		if len(row) >= 2 {
 			question := strings.ToLower(fmt.Sprintf("%v", row[0]))
+			log.Printf("Row Question: %s", question)
 			answer := fmt.Sprintf("%v", row[1])
 			if strings.Contains(q, question) {
 				return answer
