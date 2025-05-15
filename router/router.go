@@ -124,7 +124,7 @@ func findAnswerFromSheets(question string) string {
 			question := strings.ToLower(fmt.Sprintf("%v", row[0]))
 			log.Printf("Row Question: %s", question)
 			answer := fmt.Sprintf("%v", row[1])
-			if strings.Contains(question, q) {
+			if strings.ContainsAny(question, q) {
 				return answer
 			}
 		}
