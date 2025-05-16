@@ -26,12 +26,11 @@ var (
 
 // ===== 類義語辞書（拡張したいキーワードをマッピング） =====
 var synonymMap = map[string][]string{
-	"画像":      {"写真", "スクリーンショット", "スクショ"},
 	"名前":      {"氏名", "フルネーム", "よびかた"},
 	"趣味":      {"好きなこと", "興味", "遊び"},
 	"年齢":      {"生まれた年", "誕生日", "年数"},
 	"好きな言葉":   {"好きなフレーズ", "好きなセリフ", "好きなことば"},
-	"吸ってるタバコ": {"タバコ", "煙草", "喫煙"},
+	"吸ってるタバコ": {"タバコ", "煙草", "喫煙", "吸うもの", "たばこ"},
 }
 
 // ===== 形態素解析して意味のある語（名詞・動詞・形容詞）を抽出 =====
@@ -66,6 +65,24 @@ func expandSynonyms(word string) []string {
 		expanded = append(expanded, syns...)
 	}
 	return expanded
+}
+
+// ===== 未回答の質問を候補シートに記録 =====
+func logUnansweredQuestion(question string, keywords []string) {
+	// 候補シートに追記（1行：質問内容 + キーワード）
+	_, err := sheetService.Spreadsheets.Values.Append(
+		sheetID,
+		"候補!A:B",
+		&sheets.ValueRange{
+			Values: [][]interface{}{
+				{question, strings.Join(keywords, ",")},
+			},
+		},
+	).ValueInputOption("USER_ENTERED").Do()
+
+	if err != nil {
+		log.Printf("Failed to log unanswered question: %v", err)
+	}
 }
 
 // ===== 初期化関数 =====
@@ -174,5 +191,6 @@ func findAnswerFromSheets(question string) string {
 			}
 		}
 	}
+	logUnansweredQuestion(question, tokens)
 	return "その質問にはまだ対応していません。"
 }
