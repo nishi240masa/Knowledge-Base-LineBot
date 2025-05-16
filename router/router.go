@@ -164,6 +164,7 @@ func findAnswerFromSheets(question string) string {
 		keywordWords := strings.Fields(strings.ToLower(keywordText))
 
 		for _, token := range tokens {
+			log.Printf("token: %v", token)
 			for _, keyword := range keywordWords {
 				for _, synonym := range expandSynonyms(keyword) {
 					if strings.Contains(strings.ToLower(token), synonym) {
