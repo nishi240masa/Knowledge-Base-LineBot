@@ -5,6 +5,8 @@ go 1.24.2
 require (
 	github.com/gin-contrib/cors v1.7.5
 	github.com/gin-gonic/gin v1.10.0
+	github.com/ikawaha/kagome-dict/ipa v1.2.5
+	github.com/ikawaha/kagome/v2 v2.10.2
 	github.com/line/line-bot-sdk-go/v7 v7.21.0
 	google.golang.org/api v0.233.0
 )
@@ -29,6 +31,7 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.6 // indirect
 	github.com/googleapis/gax-go/v2 v2.14.1 // indirect
+	github.com/ikawaha/kagome-dict v1.1.6 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.10 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
