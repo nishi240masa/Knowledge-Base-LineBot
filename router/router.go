@@ -30,7 +30,8 @@ var synonymMap = map[string][]string{
 	"趣味":      {"好きなこと", "興味", "遊び"},
 	"年齢":      {"生まれた年", "誕生日", "年数"},
 	"好きな言葉":   {"好きなフレーズ", "好きなセリフ", "好きなことば"},
-	"吸ってるタバコ": {"タバコ", "煙草", "喫煙", "吸うもの", "たばこ"},
+	"好きなスポーツ": {"スポーツ", "運動", "アクティビティ"},
+	"好きな食べ物":  {"食事", "料理", "グルメ"},
 }
 
 // ===== 形態素解析して意味のある語（名詞・動詞・形容詞）を抽出 =====
@@ -145,6 +146,7 @@ func handleCallback(c *gin.Context) {
 		return
 	}
 
+	//　イベントごとに処理
 	for _, event := range events {
 		if event.Type == linebot.EventTypeMessage {
 			if msg, ok := event.Message.(*linebot.TextMessage); ok {
